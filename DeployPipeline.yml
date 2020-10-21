@@ -1,0 +1,49 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- dev
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+- script: echo This pipeline runs a Terraform Script to deploy Azure Services for IID Project
+  displayName: 'Title Script'
+- task: TerraformInstaller@0
+  displayName: "Installing Terraform Version 0.12.20"
+  inputs:
+    terraformVersion: '0.12.20'
+
+- task: TerraformTaskV1@0
+  displayName: "Initializing Terraform Agent"
+  inputs:
+    provider: 'azurerm'
+    command: 'init'
+    backendServiceArm: 'YourPipelineServicePrincipal'
+    backendAzureRmResourceGroupName: 'terraform_state'
+    backendAzureRmStorageAccountName: 'NameOfYourAccount'
+    backendAzureRmContainerName: 'terraform01'
+    backendAzureRmKey: 'tf/terraform.tfstate'
+
+- task: TerraformTaskV1@0
+  displayName: "Plan deployment"
+  inputs:
+    provider: 'azurerm'
+    command: 'plan'
+    commandOptions: '-var-file="./environments/dev/terraform.tfvars" -var="tenantID=yourTenantID" -var="subscriptionID=YourSubscriptionID"'
+    environmentServiceNameAzureRM: 'YourPipelineServicePrincipal'
+
+- task: TerraformTaskV1@0
+  displayName: "Apply and Validate deployment"
+  inputs:
+    provider: 'azurerm'
+    command: 'apply'
+    commandOptions: '-var-file="./environments/dev/terraform.tfvars" -var="tenantID=yourTenantID" -var="subscriptionID=YourSubscriptionID"'
+    environmentServiceNameAzureRM: 'YourPipelineServicePrincipal'
+
+- script: |
+    echo This Pipeline is done now
+  displayName: 'End Of Script Message'
